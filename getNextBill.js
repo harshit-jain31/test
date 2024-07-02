@@ -1,20 +1,3 @@
-'use strict';
-
-const { validationResult } = require('express-validator');
-const { Utils } = require('dxl-dds-common');
-
-const {
-    handleValidationError,
-    httpMetricsOptions,
-    errorCounterMetrics,
-    handleApiError,
-    dbRequestDurationMetrics,
-    buildErrorObject
-} = require('../../utils/common');
-
-const CONSTANTS = require('../../config/constant');
-const handlers = require('../../handlers/v1/query-handlers');
-
 const getNextBill = (req, res, next) => {
     res.locals.SORCOLLECTION = CONSTANTS.UTILITY_HISTORY_COLLECTION_NAME;
     const errors = validationResult(req);
@@ -46,5 +29,3 @@ const callbackHandler = (req, res, next) => {
     };
     return callback;
 };
-
-module.exports = getNextBill;
