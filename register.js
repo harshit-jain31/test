@@ -1,103 +1,38 @@
-import React, { useState, useRef } from "react";
-import Form from "react-validation/build/form";
-import Input from "react-validation/build/input";
-import CheckButton from "react-validation/build/button";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { ErrorMessage } from "@hookform/error-message";
+import AuthService from "../services/auth.service";
 import { isEmail } from "validator";
 
-import AuthService from "../services/auth.service";
-
-const required = (value) => {
-  if (!value) {
-    return (
-      <div className="invalid-feedback d-block">
-        This field is required!
-      </div>
-    );
-  }
-};
-
-const validEmail = (value) => {
-  if (!isEmail(value)) {
-    return (
-      <div className="invalid-feedback d-block">
-        This is not a valid email.
-      </div>
-    );
-  }
-};
-
-const vusername = (value) => {
-  if (value.length < 3 || value.length > 20) {
-    return (
-      <div className="invalid-feedback d-block">
-        The username must be between 3 and 20 characters.
-      </div>
-    );
-  }
-};
-
-const vpassword = (value) => {
-  if (value.length < 6 || value.length > 40) {
-    return (
-      <div className="invalid-feedback d-block">
-        The password must be between 6 and 40 characters.
-      </div>
-    );
-  }
-};
-
 const Register = (props) => {
-  const form = useRef();
-  const checkBtn = useRef();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [successful, setSuccessful] = useState(false);
   const [message, setMessage] = useState("");
 
-  const onChangeUsername = (e) => {
-    const username = e.target.value;
-    setUsername(username);
-  };
-
-  const onChangeEmail = (e) => {
-    const email = e.target.value;
-    setEmail(email);
-  };
-
-  const onChangePassword = (e) => {
-    const password = e.target.value;
-    setPassword(password);
-  };
-
-  const handleRegister = (e) => {
-    e.preventDefault();
-
+  const onSubmit = (data) => {
     setMessage("");
     setSuccessful(false);
 
-    form.current.validateAll();
+    AuthService.register(data.username, data.email, data.password).then(
+      (response) => {
+        setMessage(response.data.message);
+        setSuccessful(true);
+      },
+      (error) => {
+        const resMessage =
+          (error.response && error.response.data && error.response.data.message) ||
+          error.message ||
+          error.toString();
 
-    if (checkBtn.current.context._errors.length === 0) {
-      AuthService.register(username, email, password).then(
-        (response) => {
-          setMessage(response.data.message);
-          setSuccessful(true);
-        },
-        (error) => {
-          const resMessage =
-            (error.response &&
-              error.response.data &&
-              error.response.data.message) ||
-            error.message ||
-            error.toString();
-
-          setMessage(resMessage);
-          setSuccessful(false);
-        }
-      );
-    }
+        setMessage(resMessage);
+        setSuccessful(false);
+      }
+    );
   };
 
   return (
@@ -109,42 +44,78 @@ const Register = (props) => {
           className="profile-img-card"
         />
 
-        <Form onSubmit={handleRegister} ref={form}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           {!successful && (
             <div>
               <div className="form-group">
                 <label htmlFor="username">Username</label>
-                <Input
+                <input
                   type="text"
                   className="form-control"
+                  {...register("username", {
+                    required: "This field is required!",
+                    minLength: {
+                      value: 3,
+                      message: "The username must be between 3 and 20 characters.",
+                    },
+                    maxLength: {
+                      value: 20,
+                      message: "The username must be between 3 and 20 characters.",
+                    },
+                  })}
+                />
+                <ErrorMessage
+                  errors={errors}
                   name="username"
-                  value={username}
-                  onChange={onChangeUsername}
-                  validations={[required, vusername]}
+                  render={({ message }) => (
+                    <div className="invalid-feedback d-block">{message}</div>
+                  )}
                 />
               </div>
 
               <div className="form-group">
                 <label htmlFor="email">Email</label>
-                <Input
+                <input
                   type="text"
                   className="form-control"
+                  {...register("email", {
+                    required: "This field is required!",
+                    validate: (value) =>
+                      isEmail(value) || "This is not a valid email.",
+                  })}
+                />
+                <ErrorMessage
+                  errors={errors}
                   name="email"
-                  value={email}
-                  onChange={onChangeEmail}
-                  validations={[required, validEmail]}
+                  render={({ message }) => (
+                    <div className="invalid-feedback d-block">{message}</div>
+                  )}
                 />
               </div>
 
               <div className="form-group">
                 <label htmlFor="password">Password</label>
-                <Input
+                <input
                   type="password"
                   className="form-control"
+                  {...register("password", {
+                    required: "This field is required!",
+                    minLength: {
+                      value: 6,
+                      message: "The password must be between 6 and 40 characters.",
+                    },
+                    maxLength: {
+                      value: 40,
+                      message: "The password must be between 6 and 40 characters.",
+                    },
+                  })}
+                />
+                <ErrorMessage
+                  errors={errors}
                   name="password"
-                  value={password}
-                  onChange={onChangePassword}
-                  validations={[required, vpassword]}
+                  render={({ message }) => (
+                    <div className="invalid-feedback d-block">{message}</div>
+                  )}
                 />
               </div>
 
@@ -166,8 +137,7 @@ const Register = (props) => {
               </div>
             </div>
           )}
-          <CheckButton style={{ display: "none" }} ref={checkBtn} />
-        </Form>
+        </form>
       </div>
     </div>
   );
